@@ -21,8 +21,16 @@ reports/**
 *.zip
 
 # Python / environment
-lelabo_venv/
-.venv/
+le_labo_venv/
+.env
+.venv
+env/
+venv/
+*venv/
+**venv**/
+ENV/
+env.bak/
+venv.bak/
 __pycache__/
 *.py[co]
 *.egg-info/

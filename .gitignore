@@ -9,6 +9,7 @@ models/**
 !models/*/.gitkeep
 reports/**
 !reports/.gitkeep
+catboost_info/
 
 # Data files anywhere in the repo
 *.csv
@@ -19,19 +20,17 @@ reports/**
 *.pkl
 *.xlsx
 *.zip
+*.html
+!core/templates/report_template.html
 
 # Python / environment
-le_labo_venv/
-.env
-.venv
-env/
-venv/
-*venv/
-**venv**/
-ENV/
-env.bak/
-venv.bak/
+lelabo_venv/
+.venv/
 __pycache__/
 *.py[co]
 *.egg-info/
 .ipynb_checkpoints/
+
+# MLflow tracking data
+mlruns/
+mlartifacts/

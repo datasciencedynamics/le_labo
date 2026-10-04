@@ -8,8 +8,11 @@ import numpy as np
 import pandas as pd
 import typer
 
-from core.config import INTERIM_DATA_DIR, PROCESSED_DATA_DIR, features
+from core.config import INTERIM_DATA_DIR, PROCESSED_DATA_DIR
 from core.constants import (
+    exp_artifact_name,
+    features,
+    preproc_run_name,
     counties_interim,
     features_file,
     labels_file,
@@ -20,6 +23,7 @@ from core.constants import (
     target_outcome,
     var_index,
 )
+from core.functions import mlflow_dumpArtifact
 
 ################################################################################
 ################ Step 2: Define Typer Application ##############################
@@ -73,16 +77,25 @@ def main(
     print(f"\n{'=' * 80}\nX\n{'=' * 80}\n{X.head()}")
     print(f"\nShape of X: {X.shape}")
 
+    ############### Store Final List of Features for Production ##
+    X_columns_list = X.columns.to_list()
+    mlflow_dumpArtifact(
+        experiment_name=exp_artifact_name,
+        run_name=preproc_run_name,  # Consistent run_name for all artifacts
+        obj_name="X_columns_list",
+        obj=X_columns_list,
+    )
+
     ############################################################################
     ################ Step 6: Generate Target Variable ##########################
     ############################################################################
     counts = stores.county_fips.value_counts()
     y = pd.DataFrame(index=df.index)
+    y[target_outcome[0]] = (df.index.map(counts).fillna(0) > 0).astype(int)
     y[store_count] = df.index.map(counts).fillna(0).astype(int)
-    y[target_outcome] = (y[store_count] > 0).astype(int)
 
-    print(f"\nBreakdown of y:\n{y[target_outcome].value_counts()}\n")
-    print(f"Stores: {int(y[store_count].sum())} in {int(y[target_outcome].sum())} counties")
+    print(f"\nBreakdown of y:\n{y[target_outcome[0]].value_counts()}\n")
+    print(f"Stores: {int(y[store_count].sum())} in {int(y[target_outcome[0]].sum())} counties")
 
     ############################################################################
     ################ Step 7: County Metadata for Reporting #####################

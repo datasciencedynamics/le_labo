@@ -6,18 +6,18 @@
 :root{
   --paper:#f5f5f2; --sheet:#ffffff; --ink:#1c1d1f; --ink2:#55585d; --rule:#dcdcd6;
   --s0:#efe9dc; --s1:#e8d3a8; --s2:#ddb46b; --s3:#c98f35; --s4:#a8681a; --s5:#7a440c; --s6:#4a2705;
-  --stroke:#ffffff; --open:#1f5f8b; --dot:#1c1d1f;
+  --stroke:#ffffff; --open:#1f5f8b; --dot:#1c1d1f; --tint:#f3f3ef; --overlay:rgba(20,20,22,.45);
   --mono:"Courier Prime","Courier New",ui-monospace,monospace;
   --sans:"Libre Franklin",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --paper:#141516; --sheet:#1c1d1f; --ink:#ecebe6; --ink2:#a4a6a9; --rule:#34363a;
   --s0:#2a2620; --s1:#4a3b22; --s2:#6e5225; --s3:#946b28; --s4:#bf8a33; --s5:#e0ae55; --s6:#f6d593;
-  --stroke:#141516; --open:#7fb8e0; --dot:#ecebe6; color-scheme:dark}}
+  --stroke:#141516; --open:#7fb8e0; --dot:#ecebe6; --tint:#25272b; --overlay:rgba(0,0,0,.6); color-scheme:dark}}
 :root[data-theme="dark"]{
   --paper:#141516; --sheet:#1c1d1f; --ink:#ecebe6; --ink2:#a4a6a9; --rule:#34363a;
   --s0:#2a2620; --s1:#4a3b22; --s2:#6e5225; --s3:#946b28; --s4:#bf8a33; --s5:#e0ae55; --s6:#f6d593;
-  --stroke:#141516; --open:#7fb8e0; --dot:#ecebe6; color-scheme:dark}
+  --stroke:#141516; --open:#7fb8e0; --dot:#ecebe6; --tint:#25272b; --overlay:rgba(0,0,0,.6); color-scheme:dark}
 body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
 .wrap{max-width:1080px;margin:0 auto;padding-inline:20px;padding-block:28px 64px;display:grid;gap:40px}
 h1,h2{text-wrap:balance;margin:0}
@@ -37,7 +37,11 @@ header{display:grid;gap:12px}
 #map .lbl{font-family:var(--mono);font-size:11px;font-weight:700;fill:var(--open);paint-order:stroke;stroke:var(--sheet);stroke-width:3px}
 .legend{display:flex;flex-wrap:wrap;align-items:center;gap:10px 24px;font-size:13px;color:var(--ink2)}
 .ramp{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px}
-.ramp span.sw{display:inline-block;width:22px;height:10px}
+.ramp span.sw{display:inline-block;width:22px;height:10px;cursor:help}
+.ramp .end{font-family:var(--sans,inherit);font-size:13px;color:var(--ink2)}
+.map-guide{font-size:14px;line-height:1.5;color:var(--ink2);margin:6px 0 10px;max-width:none}
+.map-guide b{color:var(--ink)}
+.mapview .legend{padding-top:10px}
 .key{display:inline-flex;align-items:center;gap:6px}
 .tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--paper);padding:8px 10px;font-size:13px;line-height:1.4;max-width:240px;font-variant-numeric:tabular-nums}
 .tip b{font-family:var(--mono)}
@@ -59,19 +63,81 @@ td.rk{font-family:var(--mono);font-weight:700;color:var(--open)}
 .notes p{max-width:80ch}
 .src a{color:var(--ink)}
 @media (max-width:520px){.coef{grid-template-columns:110px 1fr}}
+
+/* App nav: pill bar, as on the DSD UAP classifier */
+.app-nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-block:10px;background:var(--paper);border-bottom:1px solid var(--rule)}
+.app-pill{display:inline-block;padding:6px 16px;border-radius:999px;border:1.5px solid var(--rule);background:var(--sheet);color:var(--open);font-family:var(--sans);font-size:15px;font-weight:600;text-decoration:none;white-space:nowrap;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}
+.app-pill:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(15,23,42,.12);border-color:var(--ink2)}
+.app-pill:focus-visible,.modal-close:focus-visible,.footer-copy a:focus-visible{outline:2px solid var(--open);outline-offset:2px}
+/* Model info modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:var(--overlay);z-index:100;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--sheet);color:var(--ink);border-radius:16px;padding:8px 0;max-width:660px;width:100%;max-height:90vh;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.modal-scroll{overflow-y:auto;padding:24px 32px;scrollbar-width:thin}
+.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;font-size:24px;cursor:pointer;color:var(--ink2);line-height:1}
+.modal h2{font-family:var(--mono);font-size:21px;font-weight:700;margin:0 0 16px}
+.modal h3{font-family:var(--sans);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink2);margin:20px 0 10px}
+.modal .lead{font-size:14px;color:var(--ink2);margin:0 0 8px;line-height:1.7}
+.modal .lead b{color:var(--ink)}
+.modal .lead .sub{display:inline-block;padding-left:20px}
+.modal-body-text{font-size:14px;color:var(--ink2);line-height:1.75;margin:0 0 11px;max-width:none}
+.modal-body-text b{color:var(--ink)}
+.modal table{width:100%;border-collapse:collapse;font-size:14px}
+.modal th,.modal td{padding:8px 12px;border:1px solid var(--rule);text-align:left;white-space:normal;font-family:var(--sans);color:var(--ink)}
+.modal th{background:var(--tint);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink)}
+.modal td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.modal tr.sep td{border-top:2px solid var(--ink2)}
+.table-note{font-size:12.5px;line-height:1.55;color:var(--ink2);margin:8px 0 0;max-width:none}
+/* Footer */
+.footer-copy{font-size:13px;color:var(--ink2);border-top:1px solid var(--rule);padding-top:14px}
+.footer-copy a{color:var(--ink2);text-decoration:underline;cursor:pointer}
+.footer-copy a:hover{color:var(--ink)}
+/* Panels: keep content at the top instead of stretching to the taller neighbor */
+.grid2{align-items:start}
+section{align-content:start}
+/* Column key under the tables */
+.col-key{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:6px 24px;font-size:13px;color:var(--ink2);margin:0;padding:12px 14px;border:1px solid var(--rule);background:var(--sheet)}
+.col-key b{color:var(--ink);font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-right:6px}
+th abbr{text-decoration:underline dotted;cursor:help}
+/* Expand-map button + full-window zoomable map */
+.map-head{display:flex;justify-content:flex-end}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;border:1.5px solid var(--rule);background:var(--sheet);color:var(--ink);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer}
+.btn:hover{border-color:var(--ink2)}
+.btn:focus-visible{outline:2px solid var(--open);outline-offset:2px}
+.mapview{display:none;position:fixed;inset:0;z-index:120;background:var(--paper);flex-direction:column;padding:calc(12px + env(safe-area-inset-top,0px)) 16px calc(12px + env(safe-area-inset-bottom,0px))}
+.mapview.open{display:flex}
+.mapview-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding-bottom:10px;border-bottom:1px solid var(--rule)}
+.mapview-bar h2{font-size:17px;margin:0 auto 0 0}
+.mapview-hint{font-size:13px;color:var(--ink2)}
+.mapview-stage{position:relative;flex:1;min-height:0;margin-top:10px;background:var(--sheet);border:1px solid var(--rule);overflow:hidden;touch-action:none}
+#bigmap{width:100%;height:100%;display:block;cursor:grab}
+#bigmap:active{cursor:grabbing}
+#bigmap path.c{stroke:var(--stroke);stroke-width:.4;vector-effect:non-scaling-stroke}
+#bigmap path.c:hover{stroke:var(--ink);stroke-width:1.5}
+#bigmap .st{fill:var(--dot);stroke:var(--sheet);stroke-width:1.5;vector-effect:non-scaling-stroke}
+#bigmap .ring{fill:none;stroke:var(--open);stroke-width:2;vector-effect:non-scaling-stroke}
+#bigmap .lbl{font-family:var(--mono);font-weight:700;fill:var(--open);paint-order:stroke;stroke:var(--sheet);stroke-width:3px}
+.mapview .tip{position:absolute}
+@media (max-width:520px){.modal-scroll{padding:20px 18px}.app-pill{font-size:14px;padding:5px 12px}.mapview-hint{display:none}}
 </style>
 
 <div class="wrap">
+<nav class="app-nav" aria-label="Page">
+  <a class="app-pill" role="button" tabindex="0" data-open-modal>Model Info &amp; Performance</a>
+  <a class="app-pill" href="#howto">How to Read This Map</a>
+</nav>
 <header>
   <div class="eyebrow">County whitespace model · US boutiques · __MONTH__</div>
   <h1>Where a Le Labo boutique should exist but doesn't</h1>
-  <p>A logistic model learns the demographic profile of the __N_COUNTIES__ US counties that host a Le Labo boutique, then scores all __N_ALL__ counties. High scores with no store are whitespace. Counties within __RADIUS__ miles of an existing boutique are separated as fill-in, since a store nearby already serves them.</p>
-  <div class="facts"><span><b>__N_STORES__</b> boutiques</span><span><b>__N_COUNTIES__</b> counties</span><span><b>__AUC__</b> CV AUC</span><span><b>__AP__</b> avg precision (base rate __BASE__)</span></div>
+  <p>Le Labo's __N_STORES__ US boutiques sit in __N_COUNTIES__ counties. We built a profile of those counties (size, density, education, income, age and share of residents born abroad) and scored every US county on how closely it matches. A high score with no boutique nearby is a whitespace market worth a closer look.</p>
+  <div class="facts"><span><b>__N_STORES__</b> boutiques</span><span><b>__N_COUNTIES__</b> counties with a boutique</span><span><b>__N_ALL__</b> counties scored</span><span><b>__LOO_TOP25__ of __N_COUNTIES__</b> existing markets flagged in the top 25 when hidden from the model</span></div>
 </header>
 
 <div class="mapcard">
+  <div class="map-head"><button class="btn" type="button" id="expand-map" aria-haspopup="dialog">&#x2922; Expand map</button></div>
   <svg id="map" viewBox="0 0 975 610" role="img" aria-label="US county map shaded by predicted probability of hosting a Le Labo boutique"></svg>
-  <div class="legend">
+  <p class="map-guide"><b>How to read the colors.</b> Each county is shaded by its score: how closely it resembles the counties where Le Labo already has a boutique. Pale means little resemblance; dark brown means a close match. The score measures resemblance, not expected sales. Hover a swatch or a county for its exact value.</p>
+  <div class="legend" id="legend">
     <div class="ramp" id="ramp"></div>
     <span class="key"><svg width="12" height="12"><circle cx="6" cy="6" r="4.5" fill="var(--dot)"/></svg>Has a boutique</span>
     <span class="key"><svg width="16" height="16"><circle cx="8" cy="8" r="6" fill="none" stroke="var(--open)" stroke-width="2"/></svg>Top-12 open market (numbered by rank)</span>
@@ -92,27 +158,113 @@ td.rk{font-family:var(--mono);font-weight:700;color:var(--open)}
   </section>
 </div>
 
+<p class="col-key" aria-label="Column key">
+  <span><b>Pop.</b>Residents of the county.</span>
+  <span><b>College</b>Share of residents with a bachelor's degree or higher.</span>
+  <span><b>Score</b>How closely the county matches counties that already have a Le Labo boutique. Higher is a closer match.</span>
+  <span><b>Mi to store</b>Miles to the nearest county that has a boutique.</span>
+</p>
+
 <div class="grid2">
   <section>
-    <h2>What the model rewards</h2>
-    <p class="notes">Standardized coefficients. Bars right of the line raise the odds of a boutique.</p>
+    <h2>What makes a county look like a Le Labo market</h2>
+    <p class="notes">__COEF_NOTE__</p>
     <div class="coef" id="coef"></div>
   </section>
   <section>
     <h2>Current boutique counties</h2>
-    <p class="notes">Model score for counties that already have stores. Low scores mark Le Labo's off-profile bets.</p>
+    <p class="notes">How well each existing boutique county fits the profile. A low score means Le Labo opened somewhere that doesn't look like its other markets.</p>
     <div class="tw"><table id="t-stores"></table></div>
   </section>
 </div>
 
-<section class="notes">
-  <h2 style="color:var(--ink)">Method and limits</h2>
-  <p><b>Stores.</b> __STORE_NOTE__</p>
-  <p><b>Demographics.</b> County population, density, median household income, college attainment, foreign-born share, age mix and rural share from ACS 2012–2016 five-year estimates (MIT Election Data and Science Lab county file). Land area from Census county boundaries.</p>
-  <p><b>Model.</b> L2-penalized logistic regression on standardized features. Scores are out-of-fold predictions averaged over 20 repeats of stratified 5-fold cross-validation, so no county is scored by a model that saw its own label.</p>
-  <p><b>Reading it.</b> Population dominates, so the AUC mostly reflects that big urban counties have stores. Income enters negatively after controlling for education: Le Labo sits in dense, educated urban cores, and wealthier suburban counties score lower. County is coarse; a real site study would work at tract or neighborhood level with foot-traffic data.</p>
+<section class="notes" id="howto">
+  <h2 style="color:var(--ink)">How to read this map</h2>
+  <p><b>The score.</b> Each county's score says how closely it resembles the counties where Le Labo already has boutiques. It is a similarity score, not a sales forecast: it cannot tell you how much a store would sell.</p>
+  <p><b>Open and fill-in markets.</b> Open markets score high and have no boutique within __RADIUS__ miles; they are the new-market candidates. Fill-in markets score high but already sit near a boutique, so a store there would deepen a metro Le Labo already serves.</p>
+  <p><b>Where the data comes from.</b> __STORE_NOTE__ County figures come from the US Census Bureau's American Community Survey (2012&ndash;2016 averages) and the 2010 Census.</p>
+  <p><b>Keep in mind.</b> The profile is learned from where Le Labo has chosen to open, so it repeats past choices and can miss markets the brand never tried. Counties are large and varied inside, and the population figures predate recent moves. Use this as a shortlist for closer study, such as neighborhood visits and foot-traffic data, not as a site decision. How the model works and how well it performs is under <a role="button" tabindex="0" data-open-modal>Model Info &amp; Performance</a>.</p>
 </section>
+
+<p class="footer-copy">
+  &copy; __YEAR__ <a href="https://www.datasciencedynamics.com" target="_blank" rel="noopener noreferrer">Data Science Dynamics</a>
+  &nbsp;&middot;&nbsp; __AUTHORS__
+  &nbsp;&middot;&nbsp; <a role="button" tabindex="0" data-open-modal>Model Info &amp; Performance</a>
+</p>
 </div>
+
+<!-- Full-window zoomable map -->
+<div class="mapview" id="mapview" role="dialog" aria-modal="true" aria-labelledby="mapview-title">
+  <div class="mapview-bar">
+    <h2 id="mapview-title">Whitespace map</h2>
+    <span class="mapview-hint">Scroll or pinch to zoom, drag to pan. Hover a county for details.</span>
+    <button class="btn" type="button" id="zoom-in" aria-label="Zoom in">+</button>
+    <button class="btn" type="button" id="zoom-out" aria-label="Zoom out">&minus;</button>
+    <button class="btn" type="button" id="zoom-reset">Reset</button>
+    <button class="btn" type="button" id="close-map">Close &times;</button>
+  </div>
+  <div class="mapview-stage" id="mapview-stage">
+    <svg id="bigmap" viewBox="0 0 975 610" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Zoomable US county whitespace map"></svg>
+    <div class="tip" id="bigtip" hidden></div>
+  </div>
+</div>
+
+<!-- Model Info Modal -->
+<div class="modal-overlay" id="model-modal" role="dialog" aria-modal="true" aria-labelledby="model-modal-title">
+  <div class="modal">
+    <button class="modal-close" aria-label="Close" data-close-modal>&times;</button>
+    <div class="modal-scroll">
+      <h2 id="model-modal-title">Model Architecture &amp; Performance</h2>
+      <p class="lead">
+        <b>&middot; Model:</b> __M_MODEL__<br>
+        <b>&middot; Outcome:</b> County hosts at least one standalone Le Labo boutique<br>
+        <b>&middot; Data:</b> __M_DATA__<br>
+        <span class="sub">&middot; __M_SPLIT__</span><br>
+        <span class="sub"><b>&middot; Map scores:</b> out-of-fold for all __N_ALL__ counties</span>
+      </p>
+
+      <h3>How it works</h3>
+      <p class="modal-body-text"><b>The label.</b> A county is positive if it hosts a standalone Le Labo boutique (__N_STORES__ boutiques in __N_COUNTIES__ counties). The model therefore learns where Le Labo has chosen to open, not consumer demand or store performance.</p>
+      <p class="modal-body-text"><b>The model.</b> __M_HOW__</p>
+      <p class="modal-body-text"><b>Map scores.</b> The tuned model saw 60% of counties while fitting, so its own predictions on those counties are in-sample. Every score on the map instead comes from the tuned pipeline refit out-of-fold: __REPEATS__ repeats of stratified 5-fold cross-validation with sigmoid calibration inside each fold, averaged. No county is scored by a model that saw its label.</p>
+      <p class="modal-body-text"><b>Why the large-county figures.</b> Every store county is a large urban one, so across all counties population alone already reaches an AUC near 0.99. The test of the model is how it ranks counties of 500k or more, where siting decisions are made, against population alone.</p>
+      <p class="modal-body-text"><b>Data.</b> Demographics are ACS 2012&ndash;2016 five-year estimates (MIT Election Data and Science Lab county file); rural share is from the 2010 Census; land area and county boundaries from the Census Bureau. Stores: __STORE_NOTE__</p>
+      <p class="modal-body-text"><b>Validation.</b> Each store county is hidden in turn, the pipeline is refit, and the hidden county is ranked against every county without a store. A low rank means the model would have flagged that market before Le Labo opened there.</p>
+
+      <h3>What the model learned</h3>
+      <p class="modal-body-text">__MODEL_LEARNED__</p>
+
+      <h3>Performance Metrics</h3>
+      <table>
+        <tr><th>Metric</th><th>Estimate</th><th>95% CI</th></tr>
+        __METRIC_ROWS__
+      </table>
+      <p class="table-note"><em>Note.</em> __METRIC_NOTE__</p>
+
+      <h3>Hyperparameters</h3>
+      <table>
+        <tr><th>Parameter</th><th>Value</th></tr>
+        __HYPER_ROWS__
+      </table>
+      <p class="table-note"><em>Note.</em> Tuned with model_tuner (randomized grid, average precision) and loaded from MLflow run <code>__RUN_NAME__</code>.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var modal=document.getElementById('model-modal');
+  function open(){modal.classList.add('open');modal.querySelector('[data-close-modal]').focus();}
+  function close(){modal.classList.remove('open');}
+  document.querySelectorAll('[data-open-modal]').forEach(function(el){
+    el.addEventListener('click',open);
+    el.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});
+  });
+  modal.querySelector('[data-close-modal]').addEventListener('click',close);
+  modal.addEventListener('click',function(e){if(e.target===modal)close();});
+  window.addEventListener('keydown',function(e){if(e.key==='Escape')close();},true);
+})();
+</script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <script>
@@ -135,20 +287,56 @@ const openTop=GEO.features.filter(f=>f.properties.g==='open').sort((a,b)=>b.prop
 openTop.forEach((f,i)=>{const c=cen(f);if(!c)return;g2.append('circle').attr('class','ring').attr('cx',c[0]).attr('cy',c[1]).attr('r',9);
   g2.append('text').attr('class','lbl').attr('x',c[0]+12).attr('y',c[1]+4).text(i+1)});
 // legend
-const labs=['<0.5%','0.5–2%','2–5%','5–10%','10–20%','20–40%','>40%'];
-document.getElementById('ramp').innerHTML='<span>Score</span>'+steps.map((s,i)=>`<span class="sw" style="background:var(${s})" title="${labs[i]}"></span>`).join('')+'<span>&lt;0.5% → &gt;40%</span>';
+const labs=['Under 0.5%: little resemblance','0.5–2%: faint resemblance','2–5%: some resemblance','5–10%: moderate match','10–20%: good match','20–40%: strong match','Over 40%: very close match'];
+document.getElementById('ramp').innerHTML='<span class="end">Low match</span>'+steps.map((s,i)=>`<span class="sw" style="background:var(${s})" title="Score ${labs[i]}" aria-label="Score ${labs[i]}"></span>`).join('')+'<span class="end">Close match</span>';
+// same legend under the expanded map
+(function(){const lg=document.getElementById('legend').cloneNode(true);lg.removeAttribute('id');lg.querySelector('#ramp')?.removeAttribute('id');document.getElementById('mapview').appendChild(lg);})();
 // tables
 const nm=r=>r.label;
 const maxp=Math.max(...[...T.open,...T.fill,...T.stores].map(r=>r.p)), bar=p=>`<span class="bar" style="width:${Math.max(2,p/maxp*70)}px"></span>${pct(p)}`;
 function tbl(id,rows,rank,last){document.getElementById(id).innerHTML=
- `<thead><tr>${rank?'<th>#</th>':''}<th>County</th><th class="n">Pop.</th><th class="n">College</th><th>Score</th><th class="n">${last[0]}</th></tr></thead><tbody>`+
+ `<thead><tr>${rank?'<th>#</th>':''}<th>County</th><th class="n">Pop.</th><th class="n"><abbr title="Share of residents with a bachelor's degree or higher">College</abbr></th><th>Score</th><th class="n">${last[0]}</th></tr></thead><tbody>`+
  rows.map((r,i)=>`<tr>${rank?`<td class="rk">${i+1}</td>`:''}<td>${nm(r)}</td><td class="n">${fmt(r.total_population)}</td><td class="n">${r.college_pct.toFixed(0)}%</td><td>${bar(r.p)}</td><td class="n">${last[1](r)}</td></tr>`).join('')+'</tbody>'}
 tbl('t-open',T.open,true,['Mi to store',r=>Math.round(r.mi_to_store)]);
 tbl('t-fill',T.fill,false,['Mi to store',r=>Math.round(r.mi_to_store)]);
 tbl('t-stores',T.stores,false,['Stores',r=>r.stores]);
-const lab={log_pop:'Population (log)',college_pct:'College share',log_density:'Density (log)',foreignborn_pct:'Foreign-born share',age29andunder_pct:'Age 29 and under',rural_pct:'Rural share',age65andolder_pct:'Age 65 and over',log_income:'Median income (log)'};
+const lab={log_pop:'Population',college_pct:'College degree share',log_density:'Population density',foreignborn_pct:'Born abroad share',age29andunder_pct:'Share age 29 and under',rural_pct:'Rural share',age65andolder_pct:'Share age 65 and over',log_income:'Median household income'};
 const ce=Object.entries(T.coef).sort((a,b)=>b[1]-a[1]), mx=1.35*Math.max(...ce.map(e=>Math.abs(e[1])));
 document.getElementById('coef').innerHTML=ce.map(([k,v])=>{const w=Math.abs(v)/mx*50;const l=v>=0?50:50-w;
  return `<span>${lab[k]}</span><div class="track"><i style="left:${l}%;width:${w}%;background:${v>=0?'var(--s4)':'var(--ink2)'}"></i></div>`}).join('');
-document.querySelectorAll('#coef .track').forEach((t,i)=>{const v=ce[i][1];const s=document.createElement('span');s.className='v';s.textContent=(v>0?'+':'')+v.toFixed(2);s.style.position='absolute';s.style.top='-2px';s.style[v>=0?'left':'right']=(v>=0?50+Math.abs(v)/mx*50:50+Math.abs(v)/mx*50)+'%';t.appendChild(s)});
+// ── Full-window zoomable map ──
+(function(){
+  const view=document.getElementById('mapview'), stage=document.getElementById('mapview-stage');
+  const big=d3.select('#bigmap'), btip=document.getElementById('bigtip');
+  let drawn=false, zoom, root, k0=1;
+  function draw(){
+    root=big.append('g');
+    root.append('g').selectAll('path').data(GEO.features).join('path').attr('class','c')
+      .attr('d',path).attr('fill',d=>fillFor(d.properties.p))
+      .on('mousemove',(e,d)=>{const q=d.properties,r=stage.getBoundingClientRect();
+        btip.innerHTML=`<b>${q.n}, ${q.s}</b><br>Score ${pct(q.p)}<br>Pop ${fmt(q.pop)}<br>${q.k?q.k+' boutique'+(q.k>1?'s':''):q.m+' mi to nearest boutique county'}`;
+        btip.hidden=false;let x=e.clientX-r.left+14,y=e.clientY-r.top+14;if(x>r.width-250)x-=270;if(y>r.height-110)y-=120;btip.style.left=x+'px';btip.style.top=y+'px';})
+      .on('mouseleave',()=>btip.hidden=true);
+    const g=root.append('g').attr('pointer-events','none');
+    GEO.features.filter(f=>f.properties.k>0).forEach(f=>{const c=cen(f);if(c)g.append('circle').attr('class','st').attr('cx',c[0]).attr('cy',c[1]).attr('data-r',3+Math.sqrt(f.properties.k)*1.6)});
+    openTop.forEach((f,i)=>{const c=cen(f);if(!c)return;g.append('circle').attr('class','ring').attr('cx',c[0]).attr('cy',c[1]).attr('data-r',9);
+      g.append('text').attr('class','lbl').attr('data-x',c[0]).attr('data-y',c[1]).text(i+1)});
+    zoom=d3.zoom().scaleExtent([1,16]).translateExtent([[-100,-100],[1075,710]]).on('zoom',e=>{
+      const k=e.transform.k; root.attr('transform',e.transform);
+      // keep markers and labels a constant on-screen size while zooming
+      root.selectAll('circle').attr('r',function(){return this.dataset.r/k;});
+      root.selectAll('text').attr('x',function(){return +this.dataset.x+12/k;}).attr('y',function(){return +this.dataset.y+4/k;}).attr('font-size',11/k).style('stroke-width',3/k+'px');
+    });
+    big.call(zoom).on('dblclick.zoom',null);
+    drawn=true;
+  }
+  function open(){view.classList.add('open');document.body.style.overflow='hidden';if(!drawn)draw();big.call(zoom.transform,d3.zoomIdentity);document.getElementById('close-map').focus();}
+  function close(){view.classList.remove('open');document.body.style.overflow='';btip.hidden=true;document.getElementById('expand-map').focus();}
+  document.getElementById('expand-map').addEventListener('click',open);
+  document.getElementById('close-map').addEventListener('click',close);
+  document.getElementById('zoom-in').addEventListener('click',()=>big.transition().duration(250).call(zoom.scaleBy,1.6));
+  document.getElementById('zoom-out').addEventListener('click',()=>big.transition().duration(250).call(zoom.scaleBy,1/1.6));
+  document.getElementById('zoom-reset').addEventListener('click',()=>big.transition().duration(300).call(zoom.transform,d3.zoomIdentity));
+  window.addEventListener('keydown',e=>{if(e.key==='Escape'&&view.classList.contains('open'))close();},true);
+})();
 </script>

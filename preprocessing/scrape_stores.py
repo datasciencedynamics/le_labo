@@ -137,12 +137,22 @@ def main(
     headless: bool = typer.Option(True, "--headless/--headed"),
 ) -> None:
     """Scrape the Le Labo store locator."""
-    df = asyncio.run(scrape(output_data_file, debug_dir, headless))
+    ############################################################################
+    # A failed scrape (no network, no Chromium, site blocked) is not fatal:
+    # preprocessing falls back to the existing scraped file or the bundled list.
+    ############################################################################
+    try:
+        df = asyncio.run(scrape(output_data_file, debug_dir, headless))
+    except Exception as exc:  # noqa: BLE001
+        typer.secho(f"Scrape failed: {type(exc).__name__}: {exc}", fg="yellow")
+        df = None
     if df is None:
-        typer.secho(
-            "Scrape found no stores; later steps will use the fallback list.",
-            fg="yellow",
+        fallback = (
+            "the existing scraped file"
+            if output_data_file.exists()
+            else "data/external/stores_fallback.csv"
         )
+        typer.secho(f"No new stores scraped; preprocessing will use {fallback}.", fg="yellow")
 
 
 if __name__ == "__main__":

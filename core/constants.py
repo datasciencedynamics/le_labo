@@ -1,4 +1,73 @@
 ################################################################################
+############################# Path Variables ###################################
+################################################################################
+
+import os
+
+model_output = "model_output"  # model output path
+
+################################################################################
+############################# Mlflow Variables #################################
+################################################################################
+
+# MLflow >= 3.x refuses the local file store (./mlruns) unless this is set;
+# older versions ignore it
+os.environ.setdefault("MLFLOW_ALLOW_FILE_STORE", "true")
+
+mlflow_artifacts_data = "./mlruns/preprocessing"
+mlflow_models_data = "./mlruns/models"
+mlflow_models_copy = "./mlruns/models_copy"
+
+artifact_data = "artifacts/"  # path to store mlflow artifacts
+profile_data = "profile_data"  # path to store pandas profiles in
+data_path = "data/processed/"
+
+
+# One Hot Encoded Vars to Be Omitted
+cat_vars = []
+
+
+################################################################################
+########################## Variable/DataFrame Constants ########################
+################################################################################
+
+var_index = "fips"  # county FIPS code, index of every county-level frame
+main_df = "counties.parquet"  # main county dataframe file name
+
+## DataBricks
+databricks_username = "/" + "/".join(os.getcwd().split("/")[2:-1]) + "/"
+
+
+################################################################################
+
+# The below artificat name is used for preprocessing alone
+exp_artifact_name = "preprocessing"
+preproc_run_name = "preprocessing"
+artifact_run_id = "preprocessing"
+artifact_name = "preprocessing"
+
+
+################################################################################
+############################### Target Outcome #################################
+
+# target_outcome[0] is the modeled label; the store count rides along in y
+target_outcome = ["has_store", "stores"]
+store_count = target_outcome[1]
+
+# Engineered features generated in feat_gen.py (X_columns_list in MLflow)
+features = [
+    "log_pop",
+    "log_density",
+    "log_income",
+    "college_pct",
+    "foreignborn_pct",
+    "age29andunder_pct",
+    "age65andolder_pct",
+    "rural_pct",
+]
+
+
+################################################################################
 ############################# Source URLs ######################################
 ################################################################################
 
@@ -22,6 +91,7 @@ user_agent = (
     "(KHTML, like Gecko) Chrome/126.0 Safari/537.36"
 )
 
+
 ################################################################################
 ############################# File Names #######################################
 ################################################################################
@@ -38,20 +108,16 @@ features_file = "X.parquet"  # data/processed
 labels_file = "y.parquet"  # data/processed
 meta_file = "county_meta.parquet"  # data/processed
 
-model_file = "whitespace_lr.pkl"  # models/results
-oof_scores_file = "oof_scores.parquet"  # models/results
-coef_file = "coefficients.csv"  # models/results
-metrics_file = "metrics.csv"  # models/results
+oof_scores_file = "oof_scores.parquet"  # models/results/<outcome>
+coef_file = "coefficients.csv"  # models/results/<outcome>
+metrics_file = "oof_metrics.csv"  # models/results/<outcome>
 
 report_file = "lelabo_whitespace.html"  # reports
 
-################################################################################
-########################## Variable/DataFrame Constants ########################
-################################################################################
 
-var_index = "fips"  # county FIPS code, index of every county-level frame
-target_outcome = "has_store"  # 1 if the county hosts at least one boutique
-store_count = "stores"  # number of boutiques in the county
+################################################################################
+############################# Column Definitions ###############################
+################################################################################
 
 demog_cols = [
     "state",

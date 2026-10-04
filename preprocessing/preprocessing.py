@@ -9,8 +9,13 @@ import numpy as np
 import pandas as pd
 import typer
 
+# import pickling scripts
+from model_tuner.pickleObjects import dumpObjects
+
 from core.config import EXTERNAL_DATA_DIR, INTERIM_DATA_DIR, PROCESSED_DATA_DIR, RAW_DATA_DIR
 from core.constants import (
+    exp_artifact_name,
+    preproc_run_name,
     counties_geojson,
     counties_interim,
     demog_cols,
@@ -23,6 +28,8 @@ from core.constants import (
     var_index,
 )
 from core.functions import (
+    mlflow_dumpArtifact,
+    safe_to_numeric,
     assign_counties,
     county_geometry_table,
     extract_coordinates,
@@ -98,12 +105,52 @@ def main(
     )
     counties = counties.set_index(var_index).sort_index()
 
+    ############################################################################
+    # Step 5. String Columns Handling
+    ############################################################################
+    # String columns (state, county, label) are kept for reporting but never
+    # reach the model. The list is stored in MLflow for reference only.
+    ############################################################################
+    counties = counties.apply(lambda x: safe_to_numeric(x))
+    string_cols_list = counties.select_dtypes("object").columns.to_list()
+    print(f"\nThere are {len(string_cols_list)} string columns: {string_cols_list}")
+
+    processed_dir = stores_output_file.parent
+    processed_dir.mkdir(parents=True, exist_ok=True)
+    dumpObjects(string_cols_list, str(processed_dir / "string_cols_list.pkl"))
+    mlflow_dumpArtifact(
+        experiment_name=exp_artifact_name,
+        run_name=preproc_run_name,
+        obj_name="string_cols_list",
+        obj=string_cols_list,
+    )
+
+    ############################################################################
+    # Step 6. Zero Variance Columns
+    ############################################################################
+    numeric_cols = counties.select_dtypes(include=["number"]).columns
+    var_indf = counties[numeric_cols].var()
+    zero_varlist_list = list(var_indf[var_indf == 0].index)
+
+    print("*" * 80)
+    print(f"Zero-variance columns: {zero_varlist_list}")
+    print("*" * 80)
+
+    dumpObjects(zero_varlist_list, str(processed_dir / "zero_varlist_list.pkl"))
+    mlflow_dumpArtifact(
+        experiment_name=exp_artifact_name,
+        run_name=preproc_run_name,
+        obj_name="zero_varlist_list",
+        obj=zero_varlist_list,
+    )
+    counties = counties.drop(columns=zero_varlist_list)
+
     counties_output_file.parent.mkdir(parents=True, exist_ok=True)
     counties.to_parquet(counties_output_file)
     print(f"Counties: {len(counties):,} -> {counties_output_file}")
 
     ############################################################################
-    # Step 5. Choose the store list
+    # Step 7. Choose the store list
     ############################################################################
     if stores_file is None:
         scraped = RAW_DATA_DIR / stores_scraped
@@ -117,14 +164,14 @@ def main(
     print(f"\nStores file: {stores_file} ({len(stores)} rows)")
 
     ############################################################################
-    # Step 6. Filter (e.g. drop department-store counters)
+    # Step 8. Filter (e.g. drop department-store counters)
     ############################################################################
     if query:
         stores = stores.query(query)
         print(f"After query [{query}]: {len(stores)} rows")
 
     ############################################################################
-    # Step 7. Assign stores to counties
+    # Step 9. Assign stores to counties
     ############################################################################
     if "county_fips" not in stores.columns:
         stores = assign_counties(extract_coordinates(stores), geo)
@@ -139,7 +186,7 @@ def main(
     )
 
     ############################################################################
-    # Step 8. Save stores and a note on their source (shown in the report)
+    # Step 10. Save stores and a note on their source (shown in the report)
     ############################################################################
     stores_output_file.parent.mkdir(parents=True, exist_ok=True)
     stores.reset_index(drop=True).to_parquet(stores_output_file)

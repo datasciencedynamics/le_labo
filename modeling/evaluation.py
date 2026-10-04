@@ -1,26 +1,25 @@
 from pathlib import Path
-
-import pandas as pd
 import typer
 from loguru import logger
+import pandas as pd
 
-from core.config import EVAL_DIR, PROCESSED_DATA_DIR, RESULTS_DIR, radius_mi
-from core.constants import labels_file, meta_file, oof_scores_file, store_count, target_outcome
-from core.functions import segment_counties
+# Import functions and constants
+from core.functions import (
+    mlflow_load_model,
+    return_model_metrics,
+    return_model_plots,
+    log_mlflow_metrics,
+    mlflow_log_parameters_model,
+)
 
-app = typer.Typer(add_completion=False)
+from core.constants import target_outcome
 
-KEEP = [
-    "label",
-    "total_population",
-    "median_hh_inc",
-    "college_pct",
-    store_count,
-    "p",
-    "rank",
-    "mi_to_store",
-    "segment",
-]
+from core.config import (
+    PROCESSED_DATA_DIR,
+    model_definitions,
+)
+
+app = typer.Typer()
 
 ################################################################################
 # ---- STEP 1: Define command-line arguments with default values ----
@@ -29,57 +28,113 @@ KEEP = [
 
 @app.command()
 def main(
-    scores_path: Path = typer.Option(RESULTS_DIR / oof_scores_file, "--scores-path"),
-    labels_path: Path = typer.Option(PROCESSED_DATA_DIR / labels_file, "--labels-path"),
-    meta_path: Path = typer.Option(PROCESSED_DATA_DIR / meta_file, "--meta-path"),
-    eval_path: Path = typer.Option(EVAL_DIR, "--eval-path"),
-    radius: float = typer.Option(
-        radius_mi, "--radius", help="Miles from a store county that count as served."
-    ),
-    top_n: int = typer.Option(10, "--top-n", help="Rows printed per segment."),
+    # ---- REPLACE DEFAULT PATHS AS APPROPRIATE ----
+    model_type: str = "lr",
+    pipeline_type: str = "orig",
+    outcome: str = "has_store",
+    features_path: Path = PROCESSED_DATA_DIR / "X.parquet",
+    labels_path: Path = PROCESSED_DATA_DIR / "y.parquet",
+    scoring: str = "average_precision",
+    # -----------------------------------------
 ):
 
-    ############################################################################
-    # STEP 2: Load Scores, Labels and County Metadata
-    ############################################################################
-    scores = pd.read_parquet(scores_path)["p"]
-    labels = pd.read_parquet(labels_path)[[target_outcome, store_count]]
-    meta = pd.read_parquet(meta_path)
+    ################################################################################
+    # STEP 2: Load Model Configuration & Pipeline Settings
+    ################################################################################
 
-    ############################################################################
-    # STEP 3: Distance to Nearest Store County, Segments, Ranks
-    ############################################################################
-    scored = segment_counties(scores, labels, meta, radius)
+    estimator_name = model_definitions[model_type]["estimator_name"]
 
-    ############################################################################
-    # STEP 4: Save County Scores and Whitespace Tables
-    ############################################################################
-    eval_path.mkdir(parents=True, exist_ok=True)
-    scored[KEEP].to_csv(eval_path / "county_scores.csv")
-    scored.loc[scored.segment == "open", KEEP].to_csv(eval_path / "whitespace_open.csv")
-    scored.loc[scored.segment == "fill", KEEP].to_csv(eval_path / "whitespace_fill.csv")
+    print(f"{estimator_name}_{pipeline_type}_training")
+    print(f"{estimator_name}_{outcome}")
 
-    ############################################################################
-    # STEP 5: Print Summary
-    ############################################################################
-    seg = scored.segment.value_counts()
-    print(f"Radius: {radius:g} mi")
-    print(f"Counties: {seg.get('store', 0)} store, {seg.get('fill', 0)} fill-in, "
-          f"{seg.get('open', 0)} open")
+    ################################################################################
+    # STEP 3: Load Pre-Trained Model from MLflow
+    ################################################################################
 
-    cols = ["label", "p", "mi_to_store", "total_population"]
-    for name in ("open", "fill"):
-        print(f"\n{'=' * 60}\nTop {name} markets\n{'=' * 60}")
-        print(scored.loc[scored.segment == name, cols].head(top_n)
-              .round(3).to_string(index=False))
+    model = mlflow_load_model(
+        experiment_name=f"{outcome}_model",
+        run_name=f"{estimator_name}_{pipeline_type}_training",
+        model_name=f"{estimator_name}_{outcome}",
+    )
 
-    print(f"\n{'=' * 60}\nStore counties by model score\n{'=' * 60}")
-    print(scored.loc[scored.segment == "store", ["label", store_count, "p", "rank"]]
-          .round(3).to_string(index=False))
+    # Print model thresholdon
+    print(f"Model Threshold: {model.threshold}")
 
-    print(f"\nWrote county_scores.csv, whitespace_open.csv, whitespace_fill.csv to {eval_path}")
+    ################################################################################
+    # STEP 4: Load Processed Data (Features & Labels)
+    ################################################################################
+
+    X = pd.read_parquet(features_path)
+    y = pd.read_parquet(labels_path)
+    y = y[target_outcome[0]].squeeze()  # coerce into a series
+
+    ################################################################################
+    # STEP 5: Split Data into Train, Validation, and Test Sets
+    ################################################################################
+
+    X_train, y_train = model.get_train_data(X, y)
+    X_valid, y_valid = model.get_valid_data(X, y)
+    X_test, y_test = model.get_test_data(X, y)
+
+    ################################################################################
+    # STEP 6: Log Updated Model
+    ################################################################################
+
+    mlflow_log_parameters_model(
+        experiment_name=f"{outcome}_model",
+        run_name=f"{estimator_name}_{pipeline_type}_training",
+        model_name=f"{estimator_name}_{outcome}",
+        model=model,
+    )
+
+    ################################################################################
+    # STEP 7: Compute and Evaluate Model Performance Metrics
+    ################################################################################
+
+    all_inputs = {
+        "train": (X_train, y_train),
+        "test": (X_test, y_test),
+        "valid": (X_valid, y_valid),
+    }
+    metrics = return_model_metrics(
+        inputs=all_inputs,
+        model=model,
+        estimator_name=estimator_name,
+    )
+
+    print(metrics)
+
+    ################################################################################
+    # STEP 8: Generate and Save Model Evaluation Plots
+    ################################################################################
+
+    # Generate evaluation plots
+    all_plots = return_model_plots(
+        inputs=all_inputs,
+        model=model,
+        estimator_name=estimator_name,
+        scoring=scoring,
+    )
+
+    ################################################################################
+    # STEP 9: Log Experiment Details to MLflow
+    ################################################################################
+
+    log_mlflow_metrics(
+        experiment_name=f"{outcome}_model",
+        run_name=f"{estimator_name}_{pipeline_type}_training",
+        metrics=metrics[estimator_name],
+        images=all_plots,
+    )
+
+    ################################################################################
+    # STEP 10: Completion Message
+    ################################################################################
+
     logger.success("Modeling evaluation complete.")
+    # -----------------------------------------
 
 
 if __name__ == "__main__":
+
     app()

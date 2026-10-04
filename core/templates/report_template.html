@@ -1,0 +1,154 @@
+<title>Le Labo Whitespace Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Libre+Franklin:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a single specimen-sheet column; map as the hero, ranked labels beneath, method last */
+:root{
+  --paper:#f5f5f2; --sheet:#ffffff; --ink:#1c1d1f; --ink2:#55585d; --rule:#dcdcd6;
+  --s0:#efe9dc; --s1:#e8d3a8; --s2:#ddb46b; --s3:#c98f35; --s4:#a8681a; --s5:#7a440c; --s6:#4a2705;
+  --stroke:#ffffff; --open:#1f5f8b; --dot:#1c1d1f;
+  --mono:"Courier Prime","Courier New",ui-monospace,monospace;
+  --sans:"Libre Franklin",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#141516; --sheet:#1c1d1f; --ink:#ecebe6; --ink2:#a4a6a9; --rule:#34363a;
+  --s0:#2a2620; --s1:#4a3b22; --s2:#6e5225; --s3:#946b28; --s4:#bf8a33; --s5:#e0ae55; --s6:#f6d593;
+  --stroke:#141516; --open:#7fb8e0; --dot:#ecebe6; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#141516; --sheet:#1c1d1f; --ink:#ecebe6; --ink2:#a4a6a9; --rule:#34363a;
+  --s0:#2a2620; --s1:#4a3b22; --s2:#6e5225; --s3:#946b28; --s4:#bf8a33; --s5:#e0ae55; --s6:#f6d593;
+  --stroke:#141516; --open:#7fb8e0; --dot:#ecebe6; color-scheme:dark}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:20px;padding-block:28px 64px;display:grid;gap:40px}
+h1,h2{text-wrap:balance;margin:0}
+h1{font-family:var(--mono);font-weight:700;font-size:clamp(28px,4.4vw,44px);letter-spacing:-.01em;line-height:1.1}
+h2{font-family:var(--mono);font-size:20px;font-weight:700}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2)}
+p{margin:0;max-width:68ch}
+header{display:grid;gap:12px}
+.facts{display:flex;flex-wrap:wrap;gap:8px 28px;font-family:var(--mono);font-size:14px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.facts b{color:var(--ink);font-weight:700}
+.mapcard{background:var(--sheet);border:1px solid var(--rule);padding:16px;display:grid;gap:12px;position:relative}
+#map{width:100%;height:auto;display:block}
+#map path.c{stroke:var(--stroke);stroke-width:.25}
+#map path.c:hover{stroke:var(--ink);stroke-width:1.2}
+#map .st{fill:var(--dot);stroke:var(--sheet);stroke-width:1.5}
+#map .ring{fill:none;stroke:var(--open);stroke-width:2}
+#map .lbl{font-family:var(--mono);font-size:11px;font-weight:700;fill:var(--open);paint-order:stroke;stroke:var(--sheet);stroke-width:3px}
+.legend{display:flex;flex-wrap:wrap;align-items:center;gap:10px 24px;font-size:13px;color:var(--ink2)}
+.ramp{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px}
+.ramp span.sw{display:inline-block;width:22px;height:10px}
+.key{display:inline-flex;align-items:center;gap:6px}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--paper);padding:8px 10px;font-size:13px;line-height:1.4;max-width:240px;font-variant-numeric:tabular-nums}
+.tip b{font-family:var(--mono)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:32px}
+section{display:grid;gap:12px;min-width:0}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);text-align:left;font-weight:400;padding:6px 8px;border-bottom:1px solid var(--ink)}
+td{padding:7px 8px;border-bottom:1px solid var(--rule);white-space:nowrap}
+td.n,th.n{text-align:right}
+td.rk{font-family:var(--mono);font-weight:700;color:var(--open)}
+.bar{display:inline-block;height:8px;background:var(--s4);vertical-align:middle;margin-right:6px;border-radius:0 2px 2px 0}
+.coef{display:grid;grid-template-columns:150px 1fr;gap:6px 12px;align-items:center;font-size:14px}
+.coef .track{position:relative;height:14px}
+.coef .track i{position:absolute;top:0;height:14px;border-radius:2px}
+.coef .track::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;border-left:1px solid var(--ink2)}
+.coef .v{font-family:var(--mono);font-size:12px;color:var(--ink2);margin-left:6px}
+.notes{display:grid;gap:10px;color:var(--ink2);font-size:14px}
+.notes p{max-width:80ch}
+.src a{color:var(--ink)}
+@media (max-width:520px){.coef{grid-template-columns:110px 1fr}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">County whitespace model · US boutiques · __MONTH__</div>
+  <h1>Where a Le Labo boutique should exist but doesn't</h1>
+  <p>A logistic model learns the demographic profile of the __N_COUNTIES__ US counties that host a Le Labo boutique, then scores all __N_ALL__ counties. High scores with no store are whitespace. Counties within __RADIUS__ miles of an existing boutique are separated as fill-in, since a store nearby already serves them.</p>
+  <div class="facts"><span><b>__N_STORES__</b> boutiques</span><span><b>__N_COUNTIES__</b> counties</span><span><b>__AUC__</b> CV AUC</span><span><b>__AP__</b> avg precision (base rate __BASE__)</span></div>
+</header>
+
+<div class="mapcard">
+  <svg id="map" viewBox="0 0 975 610" role="img" aria-label="US county map shaded by predicted probability of hosting a Le Labo boutique"></svg>
+  <div class="legend">
+    <div class="ramp" id="ramp"></div>
+    <span class="key"><svg width="12" height="12"><circle cx="6" cy="6" r="4.5" fill="var(--dot)"/></svg>Has a boutique</span>
+    <span class="key"><svg width="16" height="16"><circle cx="8" cy="8" r="6" fill="none" stroke="var(--open)" stroke-width="2"/></svg>Top-12 open market (numbered by rank)</span>
+  </div>
+  <div class="tip" id="tip" hidden></div>
+</div>
+
+<div class="grid2">
+  <section>
+    <h2>Open markets</h2>
+    <p class="notes">High score, no boutique within __RADIUS__ miles. These are the true whitespace candidates.</p>
+    <div class="tw"><table id="t-open"></table></div>
+  </section>
+  <section>
+    <h2>Fill-in markets</h2>
+    <p class="notes">High score, but an existing boutique sits within __RADIUS__ miles. Expansion here deepens a metro already served.</p>
+    <div class="tw"><table id="t-fill"></table></div>
+  </section>
+</div>
+
+<div class="grid2">
+  <section>
+    <h2>What the model rewards</h2>
+    <p class="notes">Standardized coefficients. Bars right of the line raise the odds of a boutique.</p>
+    <div class="coef" id="coef"></div>
+  </section>
+  <section>
+    <h2>Current boutique counties</h2>
+    <p class="notes">Model score for counties that already have stores. Low scores mark Le Labo's off-profile bets.</p>
+    <div class="tw"><table id="t-stores"></table></div>
+  </section>
+</div>
+
+<section class="notes">
+  <h2 style="color:var(--ink)">Method and limits</h2>
+  <p><b>Stores.</b> __STORE_NOTE__</p>
+  <p><b>Demographics.</b> County population, density, median household income, college attainment, foreign-born share, age mix and rural share from ACS 2012–2016 five-year estimates (MIT Election Data and Science Lab county file). Land area from Census county boundaries.</p>
+  <p><b>Model.</b> L2-penalized logistic regression on standardized features. Scores are out-of-fold predictions averaged over 20 repeats of stratified 5-fold cross-validation, so no county is scored by a model that saw its own label.</p>
+  <p><b>Reading it.</b> Population dominates, so the AUC mostly reflects that big urban counties have stores. Income enters negatively after controlling for education: Le Labo sits in dense, educated urban cores, and wealthier suburban counties score lower. County is coarse; a real site study would work at tract or neighborhood level with foot-traffic data.</p>
+</section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+const GEO=__GEO__, T=__TABLES__;
+const bins=[0.005,0.02,0.05,0.1,0.2,0.4];
+const steps=['--s0','--s1','--s2','--s3','--s4','--s5','--s6'];
+const fillFor=p=>`var(${steps[d3.bisectRight(bins,p)]})`;
+const svg=d3.select('#map'), proj=d3.geoAlbersUsa().fitSize([975,610],GEO), path=d3.geoPath(proj);
+const tip=document.getElementById('tip'), card=document.querySelector('.mapcard');
+const fmt=d3.format(','), pct=d3.format('.1%');
+svg.append('g').selectAll('path').data(GEO.features).join('path').attr('class','c').attr('d',path).attr('fill',d=>fillFor(d.properties.p))
+ .on('mousemove',(e,d)=>{const q=d.properties,r=card.getBoundingClientRect();
+   tip.innerHTML=`<b>${q.n}, ${q.s}</b><br>Score ${pct(q.p)}<br>Pop ${fmt(q.pop)}<br>${q.k?q.k+' boutique'+(q.k>1?'s':''):q.m+' mi to nearest boutique county'}`;
+   tip.hidden=false; let x=e.clientX-r.left+14,y=e.clientY-r.top+14; if(x>r.width-250)x-=270; tip.style.left=x+'px'; tip.style.top=y+'px';})
+ .on('mouseleave',()=>tip.hidden=true);
+const cen=f=>{const c=path.centroid(f);return isNaN(c[0])?null:c};
+const g2=svg.append('g').attr('pointer-events','none');
+GEO.features.filter(f=>f.properties.k>0).forEach(f=>{const c=cen(f);if(c)g2.append('circle').attr('class','st').attr('cx',c[0]).attr('cy',c[1]).attr('r',3+Math.sqrt(f.properties.k)*1.6)});
+const openTop=GEO.features.filter(f=>f.properties.g==='open').sort((a,b)=>b.properties.p-a.properties.p).slice(0,12);
+openTop.forEach((f,i)=>{const c=cen(f);if(!c)return;g2.append('circle').attr('class','ring').attr('cx',c[0]).attr('cy',c[1]).attr('r',9);
+  g2.append('text').attr('class','lbl').attr('x',c[0]+12).attr('y',c[1]+4).text(i+1)});
+// legend
+const labs=['<0.5%','0.5–2%','2–5%','5–10%','10–20%','20–40%','>40%'];
+document.getElementById('ramp').innerHTML='<span>Score</span>'+steps.map((s,i)=>`<span class="sw" style="background:var(${s})" title="${labs[i]}"></span>`).join('')+'<span>&lt;0.5% → &gt;40%</span>';
+// tables
+const nm=r=>r.label;
+const maxp=Math.max(...[...T.open,...T.fill,...T.stores].map(r=>r.p)), bar=p=>`<span class="bar" style="width:${Math.max(2,p/maxp*70)}px"></span>${pct(p)}`;
+function tbl(id,rows,rank,last){document.getElementById(id).innerHTML=
+ `<thead><tr>${rank?'<th>#</th>':''}<th>County</th><th class="n">Pop.</th><th class="n">College</th><th>Score</th><th class="n">${last[0]}</th></tr></thead><tbody>`+
+ rows.map((r,i)=>`<tr>${rank?`<td class="rk">${i+1}</td>`:''}<td>${nm(r)}</td><td class="n">${fmt(r.total_population)}</td><td class="n">${r.college_pct.toFixed(0)}%</td><td>${bar(r.p)}</td><td class="n">${last[1](r)}</td></tr>`).join('')+'</tbody>'}
+tbl('t-open',T.open,true,['Mi to store',r=>Math.round(r.mi_to_store)]);
+tbl('t-fill',T.fill,false,['Mi to store',r=>Math.round(r.mi_to_store)]);
+tbl('t-stores',T.stores,false,['Stores',r=>r.stores]);
+const lab={log_pop:'Population (log)',college_pct:'College share',log_density:'Density (log)',foreignborn_pct:'Foreign-born share',age29andunder_pct:'Age 29 and under',rural_pct:'Rural share',age65andolder_pct:'Age 65 and over',log_income:'Median income (log)'};
+const ce=Object.entries(T.coef).sort((a,b)=>b[1]-a[1]), mx=1.35*Math.max(...ce.map(e=>Math.abs(e[1])));
+document.getElementById('coef').innerHTML=ce.map(([k,v])=>{const w=Math.abs(v)/mx*50;const l=v>=0?50:50-w;
+ return `<span>${lab[k]}</span><div class="track"><i style="left:${l}%;width:${w}%;background:${v>=0?'var(--s4)':'var(--ink2)'}"></i></div>`}).join('');
+document.querySelectorAll('#coef .track').forEach((t,i)=>{const v=ce[i][1];const s=document.createElement('span');s.className='v';s.textContent=(v>0?'+':'')+v.toFixed(2);s.style.position='absolute';s.style.top='-2px';s.style[v>=0?'left':'right']=(v>=0?50+Math.abs(v)/mx*50:50+Math.abs(v)/mx*50)+'%';t.appendChild(s)});
+</script>

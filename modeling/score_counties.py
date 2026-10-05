@@ -10,6 +10,8 @@ pipeline from MLflow, refits it out-of-fold over repeated stratified k-fold
 (sigmoid-calibrated inside each fold), and averages the scores.
 
 Outputs:
+    models/results/<outcome>/oof_scores_<model>.parquet  per-model scores (always)
+    models/results/<outcome>/oof_metrics_ci_<model>.csv  per-model CIs (always)
     models/results/<outcome>/oof_scores.parquet   one score per county
     models/results/<outcome>/coefficients.csv     coefficients or importances
     models/results/<outcome>/oof_metrics.csv      out-of-fold AUC, AP, Brier
@@ -86,6 +88,10 @@ def main(
     repeats: int = cv_repeats,
     radius: float = radius_mi,
     top_n: int = 10,
+    map_outputs: bool = typer.Option(
+        True, help="Write the map/report files (scores, coefficients, whitespace "
+        "tables). Off when scoring a comparison model, so it does not overwrite "
+        "the map model's outputs."),
 ):
 
     ############################################################################
@@ -197,18 +203,23 @@ def main(
     results_dir.mkdir(parents=True, exist_ok=True)
     eval_dir.mkdir(parents=True, exist_ok=True)
 
-    scores.to_frame().to_parquet(results_dir / oof_scores_file)
-    importances.to_csv(results_dir / coef_file)
-    pd.Series({**metrics, **split_sizes, "model": estimator_name,
-               "pipeline": pipeline_type, "run_name": run_name,
-               "cv_repeats": repeats, "n_bootstrap": n_bootstrap}
-              ).to_csv(results_dir / metrics_file, header=["value"])
-    ci_table.to_csv(results_dir / "oof_metrics_ci.csv", index=False)
-    hyper.to_csv(results_dir / "hyperparameters.csv", header=["value"])
+    # Per-model out-of-fold scores and CIs, kept side by side for comparison
+    scores.to_frame().to_parquet(results_dir / f"oof_scores_{estimator_name}.parquet")
+    ci_table.to_csv(results_dir / f"oof_metrics_ci_{estimator_name}.csv", index=False)
 
-    scored[KEEP].to_csv(eval_dir / "county_scores.csv")
-    scored.loc[scored.segment == "open", KEEP].to_csv(eval_dir / "whitespace_open.csv")
-    scored.loc[scored.segment == "fill", KEEP].to_csv(eval_dir / "whitespace_fill.csv")
+    if map_outputs:
+        scores.to_frame().to_parquet(results_dir / oof_scores_file)
+        importances.to_csv(results_dir / coef_file)
+        pd.Series({**metrics, **split_sizes, "model": estimator_name,
+                   "pipeline": pipeline_type, "run_name": run_name,
+                   "cv_repeats": repeats, "n_bootstrap": n_bootstrap}
+                  ).to_csv(results_dir / metrics_file, header=["value"])
+        ci_table.to_csv(results_dir / "oof_metrics_ci.csv", index=False)
+        hyper.to_csv(results_dir / "hyperparameters.csv", header=["value"])
+
+        scored[KEEP].to_csv(eval_dir / "county_scores.csv")
+        scored.loc[scored.segment == "open", KEEP].to_csv(eval_dir / "whitespace_open.csv")
+        scored.loc[scored.segment == "fill", KEEP].to_csv(eval_dir / "whitespace_fill.csv")
 
     ############################################################################
     # Step 8. Out-of-Fold Plots (every county, bootstrap 95% bands)

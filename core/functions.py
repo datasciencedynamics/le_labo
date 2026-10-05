@@ -2122,6 +2122,10 @@ def fresh_pipeline(model):
         if best is not None:
             params["n_estimators"] = int(best) + 1
         pipe.steps[-1] = (name, type(est)(**params))
+    # Silence per-iteration logging for the hundreds of out-of-fold refits
+    est = pipe.steps[-1][1]
+    if type(est).__name__.startswith("CatBoost"):
+        est.set_params(verbose=0)
     return pipe
 
 

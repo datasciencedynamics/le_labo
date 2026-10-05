@@ -10,6 +10,8 @@ Run after score_counties.py and validate.py (or via `make export_dash`).
 Outputs (in --output-dir):
     counties.csv             one row per county: names, centroid, demographics,
                              model features, labels, score, rank, segment
+    oof_predictions.csv      out-of-fold score of every county from every model
+                             scored with score_counties (p_lr, p_rf, ...)
     counties.geojson         simplified county shapes, id = 5-digit FIPS string
     stores.csv               individual boutiques with their county FIPS
     coefficients.csv         feature, label, coef (or importance), sorted
@@ -40,6 +42,7 @@ from core.config import (
     REPORTS_DIR,
     RESULTS_DIR,
     feature_labels,
+    model_definitions,
     large_county_pop,
     radius_mi,
     report_authors,
@@ -95,6 +98,24 @@ def main(
     counties.to_csv(output_dir / "counties.csv")
 
     ############################################################################
+    # Step 2b. oof_predictions.csv: one column per scored model, for the
+    # model-comparison ROC / PR / calibration curves
+    ############################################################################
+    oof = counties[["fips5", target_outcome[0], "total_population", "large_county"]].copy()
+    oof_models = []
+    for name in model_definitions:
+        f = results_dir / f"oof_scores_{name}.parquet"
+        if not f.exists() and name == model:
+            f = results_dir / oof_scores_file  # map model scored before per-model files
+        if f.exists():
+            oof[f"p_{name}"] = pd.read_parquet(f)["p"].reindex(oof.index)
+            oof_models.append(name)
+    missing = [m for m in model_definitions if m not in oof_models]
+    if missing:
+        logger.warning(f"No out-of-fold scores for {missing}; run `make score_all_models`.")
+    oof.to_csv(output_dir / "oof_predictions.csv")
+
+    ############################################################################
     # Step 3. counties.geojson: id is the 5-digit FIPS string (plotly matches
     # it to locations=counties.fips5 with featureidkey="id")
     ############################################################################
@@ -146,6 +167,7 @@ def main(
         "authors": report_authors,
         "outcome": outcome,
         "model": model,
+        "oof_models": oof_models,
         "model_name": MODEL_NAMES.get(model, (model, model))[1],
         "run_name": str(metrics.get("run_name", f"{model}_orig_training")),
         "radius_mi": radius,

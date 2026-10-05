@@ -160,7 +160,7 @@ th abbr{text-decoration:underline dotted;cursor:help}
 
 <p class="col-key" aria-label="Column key">
   <span><b>Pop.</b>Residents of the county.</span>
-  <span><b>College</b>Share of residents with a bachelor's degree or higher.</span>
+  <span><b>Bachelor's+</b>Share of residents with a bachelor's degree or higher.</span>
   <span><b>Score</b>How closely the county matches counties that already have a Le Labo boutique. Higher is a closer match.</span>
   <span><b>Mi to store</b>Miles to the nearest county that has a boutique.</span>
 </p>
@@ -295,12 +295,12 @@ document.getElementById('ramp').innerHTML='<span class="end">Low match</span>'+s
 const nm=r=>r.label;
 const maxp=Math.max(...[...T.open,...T.fill,...T.stores].map(r=>r.p)), bar=p=>`<span class="bar" style="width:${Math.max(2,p/maxp*70)}px"></span>${pct(p)}`;
 function tbl(id,rows,rank,last){document.getElementById(id).innerHTML=
- `<thead><tr>${rank?'<th>#</th>':''}<th>County</th><th class="n">Pop.</th><th class="n"><abbr title="Share of residents with a bachelor's degree or higher">College</abbr></th><th>Score</th><th class="n">${last[0]}</th></tr></thead><tbody>`+
+ `<thead><tr>${rank?'<th>#</th>':''}<th>County</th><th class="n">Pop.</th><th class="n"><abbr title="Share of residents with a bachelor's degree or higher">Bachelor's+</abbr></th><th>Score</th><th class="n">${last[0]}</th></tr></thead><tbody>`+
  rows.map((r,i)=>`<tr>${rank?`<td class="rk">${i+1}</td>`:''}<td>${nm(r)}</td><td class="n">${fmt(r.total_population)}</td><td class="n">${r.college_pct.toFixed(0)}%</td><td>${bar(r.p)}</td><td class="n">${last[1](r)}</td></tr>`).join('')+'</tbody>'}
 tbl('t-open',T.open,true,['Mi to store',r=>Math.round(r.mi_to_store)]);
 tbl('t-fill',T.fill,false,['Mi to store',r=>Math.round(r.mi_to_store)]);
 tbl('t-stores',T.stores,false,['Stores',r=>r.stores]);
-const lab={log_pop:'Population',college_pct:'College degree share',log_density:'Population density',foreignborn_pct:'Born abroad share',age29andunder_pct:'Share age 29 and under',rural_pct:'Rural share',age65andolder_pct:'Share age 65 and over',log_income:'Median household income'};
+const lab={log_pop:'Population',college_pct:'Bachelor\'s degree share',log_density:'Population density',foreignborn_pct:'Born abroad share',age29andunder_pct:'Share age 29 and under',rural_pct:'Rural share',age65andolder_pct:'Share age 65 and over',log_income:'Median household income'};
 const ce=Object.entries(T.coef).sort((a,b)=>b[1]-a[1]), mx=1.35*Math.max(...ce.map(e=>Math.abs(e[1])));
 document.getElementById('coef').innerHTML=ce.map(([k,v])=>{const w=Math.abs(v)/mx*50;const l=v>=0?50:50-w;
  return `<span>${lab[k]}</span><div class="track"><i style="left:${l}%;width:${w}%;background:${v>=0?'var(--s4)':'var(--ink2)'}"></i></div>`}).join('');

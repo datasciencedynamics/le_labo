@@ -149,6 +149,7 @@ make whitespace_pipeline                 # MAP_MODEL=lr by default
 | `validate_model` | `modeling/validate.py` | `models/eval/has_store/<model>_validation_loo.csv`, `<model>_sensitivity_radius.csv`, `figures/loo_rank_<model>.png` |
 | `render_report` | `modeling/report.py` | `reports/lelabo_whitespace.html` |
 | `export_dash` | `modeling/export_dash.py` | `reports/dash_data/` (CSVs, GeoJSON, JSON for the Dash app; set `DASH_DIR=` to write elsewhere) |
+| `pitch_pdf` | `modeling/pitch_pdf.py`, `modeling/pitch_report.py` | `reports/Le_Labo_US_Whitespace_Analysis.pdf`, plus `map.png` and a copy of the PDF in `DASH_DIR`; `PITCH_TOP_N=` (5-15) and `PITCH_COUNTY=<FIPS>` customize it |
 
 **Why a separate scoring step.** The trained model saw 60% of counties during fitting, so its predictions on those counties are in-sample. `score_counties.py` pulls the tuned pipeline (best hyperparameters) for `MAP_MODEL` from MLflow and refits it out-of-fold over 20 repeats of stratified 5-fold CV, with sigmoid calibration inside each fold, so every county's score comes from a model that never saw its label. Boosters are refit at their tuned number of trees.
 

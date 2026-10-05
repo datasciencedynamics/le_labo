@@ -51,6 +51,10 @@ PRETRAINED ?= 0
 # Tuned model from MLflow used to score counties and draw the map
 MAP_MODEL ?= lr
 MAP_PIPELINE ?= orig
+# Models scored out-of-fold for the comparison curves (make score_all_models)
+SCORE_MODELS ?= lr rf xgb cat
+# CV repeats for the comparison models (CatBoost refits are slow; 5 repeats is plenty for curves)
+COMPARE_REPEATS ?= 5
 # Repeats of stratified 5-fold CV averaged into the out-of-fold county scores
 CV_REPEATS ?= 20
 # CV repeats per refit inside leave-one-out validation
@@ -61,6 +65,9 @@ RADIUS ?= 60
 RADII ?= 30 60 100
 # Export folder for the Dash app (make export_dash)
 DASH_DIR ?= reports/dash_data
+# PDF report: rows in the open-market table (5-15) and optional county spotlight (5-digit FIPS)
+PITCH_TOP_N ?= 12
+PITCH_COUNTY ?=
 
 
 # ------------------------------------------------------------------------------
@@ -372,6 +379,23 @@ score_counties:
 		2>&1 | tee models/results/$$outcome/$(MAP_MODEL)_score_counties.txt; \
 	done
 
+## Score every model in SCORE_MODELS out-of-fold for the comparison curves (MAP_MODEL last, writes map outputs)
+score_all_models:
+	@for outcome in $(OUTCOMES); do \
+		mkdir -p models/results/$$outcome models/eval/$$outcome; \
+		for model in $(filter-out $(MAP_MODEL),$(SCORE_MODELS)); do \
+			$(PYTHON_INTERPRETER) $(PROJECT_DIRECTORY)/modeling/score_counties.py \
+			--model-type $$model \
+			--pipeline-type $(MAP_PIPELINE) \
+			--outcome $$outcome \
+			--repeats $(COMPARE_REPEATS) \
+			--radius $(RADIUS) \
+			--no-map-outputs \
+			2>&1 | tee models/results/$$outcome/$${model}_score_counties.txt; \
+		done; \
+	done
+	$(MAKE) score_counties
+
 ## Leave-one-out validation and radius sensitivity for MAP_MODEL
 validate_model:
 	@for outcome in $(OUTCOMES); do \
@@ -404,8 +428,19 @@ export_dash:
 		--radius $(RADIUS) \
 	2>&1 | tee reports/export_dash.txt
 
-## Score counties, validate and render the report
-whitespace_pipeline: score_counties validate_model render_report
+## Build the client PDF report from DASH_DIR (after render_report and export_dash)
+.PHONY: pitch_pdf
+pitch_pdf:
+	$(PYTHON_INTERPRETER) $(PROJECT_DIRECTORY)/modeling/pitch_pdf.py \
+		--data-dir $(DASH_DIR) \
+		--report-html ./reports/lelabo_whitespace.html \
+		--output-file ./reports/Le_Labo_US_Whitespace_Analysis.pdf \
+		--top-n $(PITCH_TOP_N) \
+		--county "$(PITCH_COUNTY)" \
+	2>&1 | tee reports/pitch_pdf.txt
+
+## Score all models, validate and render the report
+whitespace_pipeline: score_all_models validate_model render_report
 
 ## Delete model outputs and reports (keeps .gitkeep files and mlruns/)
 .PHONY: clean_models
@@ -425,7 +460,7 @@ clean_mlruns:
 # evaluation, county scoring, validation and report in one command
 
 ## Full pipeline: data, scrape (if needed), features, train, evaluate, map
-preproc_train_eval: preproc_pipeline train_all_models eval_all_models whitespace_pipeline compare_models
+preproc_train_eval: preproc_pipeline train_all_models eval_all_models whitespace_pipeline compare_models export_dash pitch_pdf
 
 
 ################################################################################
